@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Movie Advisor</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1c2330;
+      --muted: #5a6577;
+      --accent: #2f6fed;
+      --border: #dde2ea;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 1.35rem; }
+    header span { color: var(--muted); font-size: 0.9rem; }
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    nav button {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.92rem;
+    }
+    nav button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 1.15rem; }
+    .panel p { margin: 0 0 14px; color: var(--muted); font-size: 0.92rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    input[type=text], select {
+      width: 100%;
+      max-width: 360px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn:disabled { opacity: 0.6; cursor: wait; }
+    .list { margin-top: 16px; }
+    .item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .item strong { display: block; margin-bottom: 4px; }
+    .meta { color: var(--muted); font-size: 0.86rem; }
+    .tag {
+      display: inline-block;
+      background: #e8edf5;
+      color: #3a4558;
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin: 2px 3px 0 0;
+      font-size: 0.75rem;
+    }
+    .err { color: #b42318; margin-top: 10px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Movie assistant</h1>
+    <span>рекомендации фильмов</span>
+  </header>
+  <main>
+    <nav id="nav">
+      <button data-tab="top" class="active">Популярные</button>
+      <button data-tab="genre">По жанру</button>
+      <button data-tab="content">По контенту</button>
+      <button data-tab="collab">Коллаборативная</button>
+      <button data-tab="help">Справка</button>
+    </nav>
+
+    <section id="tab-top" class="panel">
+      <h2>Топ популярных фильмов</h2>
+      <p>Взвешенный рейтинг учитывает среднюю оценку и число голосов.</p>
+      <button class="btn" onclick="loadTop()">Показать топ-10</button>
+      <div id="out-top" class="list"></div>
+    </section>
+
+    <section id="tab-genre" class="panel hidden">
+      <h2>Рекомендации по жанру</h2>
+      <p>Топ фильмов внутри выбранного жанра.</p>
+      <label for="genre">Жанр</label>
+      <select id="genre"></select>
+      <br>
+      <button class="btn" onclick="loadGenre()">Показать 10 фильмов</button>
+      <div id="out-genre" class="list"></div>
+    </section>
+
+    <section id="tab-content" class="panel hidden">
+      <h2>Похожие по контенту</h2>
+      <p>Сходство по жанрам и десятилетию выхода.</p>
+      <label for="title-content">Название фильма</label>
+      <input type="text" id="title-content" placeholder="например: Toy Story, Matrix" />
+      <br>
+      <button class="btn" onclick="loadContent()">Найти похожие</button>
+      <div id="out-content" class="list"></div>
+    </section>
+
+    <section id="tab-collab" class="panel hidden">
+      <h2>Коллаборативная фильтрация</h2>
+      <p>Фильмы, которые оценивают похожим образом одни и те же зрители.</p>
+      <label for="title-collab">Название фильма</label>
+      <input type="text" id="title-collab" placeholder="например: Matrix, Inception" />
+      <br>
+      <button class="btn" onclick="loadCollab()">Найти похожие</button>
+      <div id="out-collab" class="list"></div>
+    </section>
+
+    <section id="tab-help" class="panel hidden">
+      <h2>Справка</h2>
+      <p>
+        1. <b>Популярные</b> — топ-10 по взвешенному рейтингу.<br>
+        2. <b>По жанру</b> — топ-10 внутри жанра.<br>
+        3. <b>По контенту</b> — 10 похожих по жанрам и году.<br>
+        4. <b>Коллаборативная</b> — 10 похожих по оценкам зрителей.
+      </p>
+      <h3>Команды API</h3>
+      <div id="help-table"></div>
+    </section>
+  </main>
+
+  <script>
+    const API = "";  // same origin
+
+    async function get(path, params = {}) {
+      const url = new URL(API + path, window.location.origin);
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+      });
+      const r = await fetch(url);
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || r.statusText);
+      return data;
+    }
+
+    function renderList(el, items, withSim = false) {
+      if (!items || !items.length) {
+        el.innerHTML = '<div class="meta">Ничего не найдено</div>';
+        return;
+      }
+      el.innerHTML = items.map((m, i) => {
+        const tags = (m.genres || "").split("|").filter(Boolean)
+          .map(g => `<span class="tag">${g}</span>`).join("");
+        const sim = withSim && m.similarity != null
+          ? ` · сходство ${m.similarity.toFixed(2)}` : "";
+        return `<div class="item">
+          <strong>${i + 1}. ${m.title}</strong>
+          <div class="meta">${m.year || "—"} · ★ ${m.mean_score.toFixed(1)}
+            (${m.votes} оценок) · вес ${m.weight.toFixed(2)}${sim}</div>
+          <div>${tags}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function showError(el, err) {
+      el.innerHTML = `<div class="err">${err.message || err}</div>`;
+    }
+
+    async function loadTop() {
+      const el = document.getElementById("out-top");
+      el.innerHTML = "Загрузка…";
+      try { renderList(el, await get("/api/top", { limit: 10 })); }
+      catch (e) { showError(el, e); }
+    }
+
+    async function loadGenre() {
+      const el = document.getElementById("out-genre");
+      const genre = document.getElementById("genre").value;
+      el.innerHTML = "Загрузка…";
+      try { renderList(el, await get("/api/by-genre", { genre, limit: 10 })); }
+      catch (e) { showError(el, e); }
+    }
+
+    async function loadContent() {
+      const el = document.getElementById("out-content");
+      const title = document.getElementById("title-content").value.trim();
+      if (!title) return;
+      el.innerHTML = "Загрузка…";
+      try { renderList(el, await get("/api/similar-content", { title, limit: 10 }), true); }
+      catch (e) { showError(el, e); }
+    }
+
+    async function loadCollab() {
+      const el = document.getElementById("out-collab");
+      const title = document.getElementById("title-collab").value.trim();
+      if (!title) return;
+      el.innerHTML = "Загрузка…";
+      try { renderList(el, await get("/api/similar-collab", { title, limit: 10 }), true); }
+      catch (e) { showError(el, e); }
+    }
+
+    async function loadHelp() {
+      const box = document.getElementById("help-table");
+      try {
+        const rows = await get("/api/help");
+        box.innerHTML = `<table>
+          <thead><tr><th>Метод</th><th>Путь</th><th>Параметры</th><th>Описание</th></tr></thead>
+          <tbody>
+            ${rows.map(r => `<tr>
+              <td>${r.method}</td><td><code>${r.path}</code></td>
+              <td>${r.params}</td><td>${r.description}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>`;
+      } catch (e) {
+        box.innerHTML = `<div class="err">${e.message}</div>`;
+      }
+    }
+
+    // tabs
+    document.querySelectorAll("#nav button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#nav button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll("main > section").forEach(s => s.classList.add("hidden"));
+        document.getElementById("tab-" + btn.dataset.tab).classList.remove("hidden");
+        if (btn.dataset.tab === "help") loadHelp();
+      });
+    });
+
+    // genres
+    get("/api/genres").then(list => {
+      const sel = document.getElementById("genre");
+      sel.innerHTML = list.map(g => `<option value="${g}">${g}</option>`).join("");
+    }).catch(console.error);
+  </script>
+</body>
+</html>
